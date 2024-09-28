@@ -1,11 +1,11 @@
-sort = select
+sort = substitution
 
-ifeq ($(sort), select)
-	OBJS = src/sort/select-sort.c
+ifeq ($(sort), substitution)
+	OBJS = src/sort/substitution-sort.c
 else ifeq ($(sort), natural)
 	OBJS = src/sort/natural-sort.c
 else
-	$(error "O algoritmo de sort deve ser 'select' ou 'natural'")
+	$(error "O algoritmo de sort deve ser 'substitution' ou 'natural'")
 endif
 
 all:

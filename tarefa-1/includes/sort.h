@@ -14,6 +14,12 @@ typedef struct
     bool frozen;
 } PartitionElement;
 
+typedef struct
+{
+    PartitionElement **fastMemory;
+    FILE *partitionFile;
+} Memory;
+
 void startSort(FILE *file, const int partitionSize, const char *outputDirectory);
 
 static FILE *createPartitionFile(const char *outputDirectory, const int partitionCount)
@@ -104,6 +110,35 @@ static void printMemoryState(PartitionElement **fastMemory, const int partitionS
     }
 
     printf("\n");
+}
+
+static Memory createMemory(FILE *file, const int partitionSize, const char *outputDirectory)
+{
+    PartitionElement **fastMemory = (PartitionElement **)malloc(partitionSize * sizeof(PartitionElement));
+
+    for (int i = 0; i < partitionSize; i++)
+    {
+        fastMemory[i] = readNextClient(file);
+    }
+
+    printMemoryState(fastMemory, partitionSize);
+
+    FILE *partitionFile = createPartitionFile(outputDirectory, 1);
+
+    if (partitionFile == NULL)
+    {
+        printf("Error creating partition file\n");
+
+        fclose(file);
+
+        free(fastMemory);
+        free(partitionFile);
+
+        exit(1);
+    }
+
+    Memory memory = {fastMemory, partitionFile};
+    return memory;
 }
 
 #endif

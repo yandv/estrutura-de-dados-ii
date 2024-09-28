@@ -2,30 +2,12 @@
 
 void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
 {
-    PartitionElement **fastMemory = (PartitionElement **)malloc(partitionSize * sizeof(PartitionElement));
+    Memory memory = createMemory(file, partitionSize, outputDirectory);
 
-    for (int i = 0; i < partitionSize; i++)
-    {
-        fastMemory[i] = readNextClient(file);
-    }
-
-    printMemoryState(fastMemory, partitionSize);
+    PartitionElement **fastMemory = memory.fastMemory;
+    FILE *partitionFile = memory.partitionFile;
 
     int partitionCount = 1;
-
-    FILE *partitionFile = createPartitionFile("bin/output", partitionCount);
-
-    if (partitionFile == NULL)
-    {
-        printf("Error creating partition file\n");
-
-        fclose(file);
-
-        free(fastMemory);
-        free(partitionFile);
-
-        exit(1);
-    }
 
     while (countNonNullPartitions(fastMemory, partitionSize) > 0)
     {
