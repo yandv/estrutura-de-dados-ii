@@ -44,13 +44,13 @@ void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
 
         if (fastMemory[firstMinIdx] != NULL && fastMemory[firstMinIdx]->client->codigo < firstMin->client->codigo)
         {
-
             printf("New client %d %s %s %s have been frozen \n", fastMemory[firstMinIdx]->client->codigo, fastMemory[firstMinIdx]->client->nome, fastMemory[firstMinIdx]->client->dataNascimento, fastMemory[firstMinIdx]->frozen ? "(frozen)" : "");
             fastMemory[firstMinIdx]->frozen = true;
         }
 
         printf("\n");
 
+        printf("Memory state: \n");
         printMemoryState(fastMemory, partitionSize);
     }
 }

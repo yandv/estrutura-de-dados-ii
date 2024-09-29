@@ -47,7 +47,7 @@ int main(int argc, char const *argv[])
     }
 
     printf("File \"%s\" opened\n", fileName);
-    printf("Starting %s sort routine...\n", "select");
+    printf("Starting %s sort routine...\n\n", "select");
 
     startSort(file, partitionSize, outputDirectory);
 

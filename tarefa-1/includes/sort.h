@@ -57,20 +57,20 @@ static int countNonNullPartitions(PartitionElement **fastMemory, const int parti
 
 static int findFirstNonFrozenMin(PartitionElement **fastMemory, const int partitionSize)
 {
-    PartitionElement *min = NULL;
+    int idx = -1;
 
     for (int i = 0; i < partitionSize; i++)
     {
         if (fastMemory[i] != NULL && !fastMemory[i]->frozen)
         {
-            if (min == NULL || fastMemory[i]->client->codigo < min->client->codigo)
+            if (idx == -1 || fastMemory[i]->client->codigo < fastMemory[idx]->client->codigo)
             {
-                return i;
+                idx = i;
             }
         }
     }
 
-    return -1;
+    return idx;
 }
 
 static PartitionElement *readNextClient(FILE *file)
@@ -99,22 +99,30 @@ static PartitionElement *readNextClient(FILE *file)
 
 static void printMemoryState(PartitionElement **fastMemory, const int partitionSize)
 {
-    printf("Memory state: \n");
-
+    printf(" > ");
     for (int i = 0; i < partitionSize; i++)
     {
         if (fastMemory[i] == NULL)
-            printf("  > %d - Empty\n", i);
+            printf("%d - Empty ", i);
         else
-            printf("  > %d - Client %d %s %s %s\n", i, fastMemory[i]->client->codigo, fastMemory[i]->client->nome, fastMemory[i]->client->dataNascimento, fastMemory[i]->frozen ? "(frozen)" : "");
+            printf("%d - %d, %s %s", i, fastMemory[i]->client->codigo, fastMemory[i]->client->nome, fastMemory[i]->frozen ? "(frozen)" : "");
+        if (i < partitionSize - 1)
+            printf("| ");
     }
 
-    printf("\n");
+    printf("\n\n");
 }
 
 static Memory createMemory(FILE *file, const int partitionSize, const char *outputDirectory)
 {
     PartitionElement **fastMemory = (PartitionElement **)malloc(partitionSize * sizeof(PartitionElement));
+
+    if (fastMemory == NULL)
+    {
+        printf("Error allocating memory for partition elements\n");
+        fclose(file);
+        exit(1);
+    }
 
     for (int i = 0; i < partitionSize; i++)
     {

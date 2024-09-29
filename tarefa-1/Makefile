@@ -10,6 +10,7 @@ endif
 
 all:
 	mkdir -p bin
+	rm -rf bin/output
 	gcc -o ./bin/executable.exe src/main.c $(OBJS) -lm
 	./bin/executable.exe $(ARGS)
 
@@ -17,6 +18,11 @@ creator:
 	mkdir -p bin
 	gcc -o ./bin/creator.exe src/creator.c -lm
 	./bin/creator.exe $(ARGS)
+
+reader:
+	mkdir -p bin
+	gcc -o ./bin/reader.exe src/partition-reader.c -lm
+	./bin/reader.exe $(ARGS)
 
 clean:
 	rm -rf bin

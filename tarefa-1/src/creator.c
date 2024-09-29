@@ -47,7 +47,7 @@ const char *names[] = {
 
 int main(int argc, char const *argv[])
 {
-    const int clientsCount = argc > 1 ? atoi(argv[1]) : 100;
+    const int clientsCount = argc > 1 ? atoi(argv[1]) : 10;
     const char *fileName = argc > 2 ? argv[2] : "resources/clients.txt";
 
     if (clientsCount <= 0)
