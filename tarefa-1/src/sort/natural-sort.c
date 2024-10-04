@@ -1,4 +1,4 @@
-#include "../../includes/sort.h"
+#include "../../include/sort.h"
 
 /**
  * Esse algoritmo considera o tamanho do reservatório (n) igual ao número de partições (M)
@@ -73,7 +73,7 @@ void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
             printf("New client %d %s %s read from file\n", fastMemory[firstMinIdx]->client->codigo, fastMemory[firstMinIdx]->client->nome, fastMemory[firstMinIdx]->client->dataNascimento);
         }
 
-        fwrite(firstMin->client, sizeof(Client), 1, partitionFile);
+        writeClient(firstMin->client, partitionFile);
 
         int firstNullReservoirSpaceIdx = findFirstNullReservoirSpace(partitionReservoir, partitionSize);
 
@@ -98,13 +98,12 @@ void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
 
         if (firstNullReservoirSpaceIdx == -1)
         {
-
             printf("Reservoir is full... moving all elements in fast memory to partition and reservoir elements to fast memory\n");
             int idx = findFirstNonFrozenMin(fastMemory, partitionSize);
 
             while (idx != -1)
             {
-                fwrite(fastMemory[idx]->client, sizeof(Client), 1, partitionFile);
+                writeClient(fastMemory[idx]->client, partitionFile);
                 fastMemory[idx] = NULL;
                 idx = findFirstNonFrozenMin(fastMemory, partitionSize);
             }
@@ -127,4 +126,8 @@ void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
             continue;
         }
     }
+
+    fclose(partitionFile);
+    free(fastMemory);
+    free(partitionReservoir);
 }

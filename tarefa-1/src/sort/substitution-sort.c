@@ -1,4 +1,4 @@
-#include "../../includes/sort.h"
+#include "../../include/sort.h"
 
 void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
 {
@@ -40,7 +40,7 @@ void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
         fastMemory[firstMinIdx] = readNextClient(file);
 
         printf("Client %d %s %s %s written to partition %d\n", firstMin->client->codigo, firstMin->client->nome, firstMin->client->dataNascimento, firstMin->frozen ? "(frozen)" : "", partitionCount);
-        fwrite(firstMin->client, sizeof(Client), 1, partitionFile);
+        writeClient(firstMin->client, partitionFile);
 
         if (fastMemory[firstMinIdx] != NULL && fastMemory[firstMinIdx]->client->codigo < firstMin->client->codigo)
         {
@@ -53,4 +53,7 @@ void startSort(FILE *file, const int partitionSize, const char *outputDirectory)
         printf("Memory state: \n");
         printMemoryState(fastMemory, partitionSize);
     }
+
+    fclose(partitionFile);
+    free(fastMemory);
 }

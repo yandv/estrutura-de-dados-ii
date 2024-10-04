@@ -75,18 +75,11 @@ static int findFirstNonFrozenMin(PartitionElement **fastMemory, const int partit
 
 static PartitionElement *readNextClient(FILE *file)
 {
-    Client *client = (Client *)malloc(sizeof(Client));
+    Client *client = readClient(file);
 
-    if (fread(client, sizeof(Client), 1, file) != 1)
+    if (client == NULL)
     {
-        if (feof(file))
-        {
-            return NULL;
-        }
-
-        printf("Error reading file\n");
-        free(client);
-        exit(1);
+        return NULL;
     }
 
     PartitionElement *partitionElement = (PartitionElement *)malloc(sizeof(PartitionElement));
@@ -123,6 +116,7 @@ static Memory createMemory(FILE *file, const int partitionSize, const char *outp
         fclose(file);
         exit(1);
     }
+
 
     for (int i = 0; i < partitionSize; i++)
     {

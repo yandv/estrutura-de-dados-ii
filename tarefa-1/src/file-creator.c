@@ -3,7 +3,7 @@
 #include <time.h>
 #include <string.h>
 
-#include "../includes/client.h"
+#include "../include/client.h"
 
 const char *names[] = {
     "Alice",
@@ -78,13 +78,13 @@ int main(int argc, char const *argv[])
         client->codigo = rand() % 10000;
         strcpy(client->nome, names[rand() % (sizeof(names) / sizeof(names[0]))]);
         sprintf(client->dataNascimento, "%02d/%02d/%04d", rand() % 30 + 1, rand() % 12 + 1, rand() % 130 + (2024 - 130));
-        fwrite(client, sizeof(Client), 1, file);
+        writeClient(client, file);
     }
 
     printf("%d clients created successfully, listing all of created itens...\n\n", clientsCount);
     rewind(file);
 
-    while (fread(client, sizeof(Client), 1, file) == 1)
+    while ((client = readClient(file)) != NULL)
     {
         printf("Created client %d %s %s\n", client->codigo, client->nome, client->dataNascimento);
     }

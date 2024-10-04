@@ -6,8 +6,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../includes/client.h"
-#include "../includes/sort.h"
+#include "../include/client.h"
+#include "../include/sort.h"
 
 struct stat st = {0};
 

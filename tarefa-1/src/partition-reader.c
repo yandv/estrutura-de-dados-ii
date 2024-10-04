@@ -3,17 +3,11 @@
 #include <string.h>
 #include <dirent.h>
 
-#include "../includes/client.h"
+#include "../include/client.h"
 
 int compare(const void *a, const void *b)
 {
-    const char *str1 = *(const char **)a;
-    const char *str2 = *(const char **)b;
-
-    int num1 = atoi(str1 + 10);
-    int num2 = atoi(str2 + 10);
-
-    return num1 - num2;
+    return atoi(*(const char **)a + 10) - atoi(*(const char **)b + 10);
 }
 
 int main(int argc, char const *argv[])
@@ -65,9 +59,9 @@ int main(int argc, char const *argv[])
 
         printf("Partition file \"%s\"\n", files[i]);
 
-        Client *client = (Client *)malloc(sizeof(Client));
+        Client *client = readClient(file);
 
-        while (fread(client, sizeof(Client), 1, file))
+        while (client != NULL)
         {
             printf("%d ", client->codigo);
         }
