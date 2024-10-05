@@ -1,4 +1,5 @@
 #include "../../include/interpolation.h"
+#include <math.h>
 
 // https://www.javatpoint.com/tournament-tree
 
@@ -8,6 +9,7 @@ typedef struct
     bool valid;
 
     FILE *partitionFile;
+    int partitionIndex;
 } TreeNode;
 
 TreeNode *createTreeNode(Client *client, FILE *partitionFile)
@@ -27,6 +29,35 @@ TreeNode *createTreeNode(Client *client, FILE *partitionFile)
     return node;
 }
 
+void printTree(TreeNode **winnerTree, int inputFilesCount)
+{
+    int level = 0;
+    int levelSize = 1;
+
+    printf("\n");
+
+    for (int i = 0; i < inputFilesCount * 2 - 1; i++)
+    {
+        if (i == levelSize)
+        {
+            printf("\n");
+            level++;
+            levelSize += pow(2, level);
+        }
+
+        if (winnerTree[i]->valid)
+        {
+            printf("%d (%d) ", winnerTree[i]->client->codigo, winnerTree[i]->partitionIndex);
+        }
+        else
+        {
+            printf("NULL (%d) ", winnerTree[i]->partitionIndex);
+        }
+    }
+
+    printf("\n\n");
+}
+
 TreeNode **createWinnerTree(FILE **inputFiles, int inputFilesCount)
 {
     TreeNode **winnerTree = (TreeNode **)malloc((inputFilesCount * 2 - 1) * sizeof(TreeNode *));
@@ -36,9 +67,11 @@ TreeNode **createWinnerTree(FILE **inputFiles, int inputFilesCount)
         return NULL;
     }
 
+    printf("Creating winner tree with %d nodes\n\n", inputFilesCount * 2 - 1);
+
     for (int i = 0; i < inputFilesCount; i++)
     {
-        printf("Reading file %d to index %d\n", i, inputFilesCount - 1 + i);
+        printf("Created node %d\n", i);
         FILE *file = inputFiles[i];
         Client *client = readClient(file);
 
@@ -47,8 +80,11 @@ TreeNode **createWinnerTree(FILE **inputFiles, int inputFilesCount)
         if (client == NULL)
             treeNode->valid = false;
 
+        treeNode->partitionIndex = i;
         winnerTree[inputFilesCount - 1 + i] = treeNode;
     }
+
+    printf("\nCreated %d nodes successfully\n", inputFilesCount);
 
     for (int i = inputFilesCount - 2; i >= 0; i--)
     {
@@ -76,31 +112,26 @@ TreeNode **createWinnerTree(FILE **inputFiles, int inputFilesCount)
         }
     }
 
+    printTree(winnerTree, inputFilesCount);
+
     return winnerTree;
 }
 
 void updateWinnerTree(TreeNode **winnerTree, Client *client, FILE *inputFile, int inputFilesCount)
 {
-    int index = -1;
+    int position = -1;
 
-    for (int i = 0; i < inputFilesCount; i++)
+    for (int i = inputFilesCount * 2 - 2; i >= 0; i--)
     {
-        if (winnerTree[inputFilesCount - 1 + i]->partitionFile == inputFile)
+        if (winnerTree[i]->partitionFile == inputFile)
         {
-            index = i;
+            position = i;
             break;
         }
     }
 
-    int position = inputFilesCount - 1 + index;
-
     winnerTree[position]->client = client;
     winnerTree[position]->valid = client != NULL;
-
-    if (client != NULL)
-    {
-        printf("Lendo cliente %d %s\n", client->codigo, client->nome);
-    }
 
     while (position > 0)
     {
@@ -109,9 +140,9 @@ void updateWinnerTree(TreeNode **winnerTree, Client *client, FILE *inputFile, in
 
         if (brother < 2 * inputFilesCount - 1)
         {
-            if (winnerTree[brother]->valid && winnerTree[brother]->valid)
+            if (winnerTree[brother]->valid && winnerTree[position]->valid)
             {
-                if (winnerTree[brother]->client->codigo < client->codigo)
+                if (winnerTree[brother]->client->codigo < winnerTree[position]->client->codigo)
                 {
                     winnerTree[parent] = winnerTree[brother];
                 }
@@ -121,6 +152,7 @@ void updateWinnerTree(TreeNode **winnerTree, Client *client, FILE *inputFile, in
                 }
             }
             else if (winnerTree[brother]->valid)
+
             {
                 winnerTree[parent] = winnerTree[brother];
             }
@@ -151,13 +183,16 @@ void startInterpolation(FILE *outputFile, FILE **inputFiles, int inputFilesCount
 
     TreeNode *winner = winnerTree[0];
 
-    while (winner != NULL)
+    while (winner->valid)
     {
-        printf("Client %d %s inserted into sorted file\n", winner->client->codigo, winner->client->nome);
+        printf("Client %d %s from %d inserted into sorted file\n", winner->client->codigo, winner->client->nome, winner->partitionIndex);
         writeClient(winner->client, outputFile);
 
         updateWinnerTree(winnerTree, readClient(winner->partitionFile), winner->partitionFile, inputFilesCount);
+        winner = winnerTree[0];
     }
 
-    printf("Finish him!");
+    free(winnerTree);
+    free(winner);
+    printf("\n");
 }

@@ -60,13 +60,16 @@ int main(int argc, char const *argv[])
         printf("Partition file \"%s\"\n", files[i]);
 
         Client *client = readClient(file);
+        int totalCount = 0;
 
         while (client != NULL)
         {
-            printf("%d ", client->codigo);
+            printf("%d (%s) | ", client->codigo, client->nome);
+            totalCount++;
+            client = readClient(file);
         }
 
-        printf("\n");
+        printf("Lido %d\n", totalCount);
 
         free(client);
         fclose(file);
