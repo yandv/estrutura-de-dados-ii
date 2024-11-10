@@ -76,6 +76,7 @@ int main(int argc, char const *argv[])
     for (int i = 0; i < clientsCount; i++)
     {
         client->codigo = rand() % 10000;
+        client->proximo_offset = -1;
         strcpy(client->nome, names[rand() % (sizeof(names) / sizeof(names[0]))]);
         writeClient(client, file);
     }

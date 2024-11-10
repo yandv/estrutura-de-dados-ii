@@ -26,40 +26,82 @@ void add(Client cliente, char* dir_elements_table, char* dir_index_table, int ta
     int index = hash_function(cliente.codigo, table_size);
     int offset;
 
-    // Abrindo e adicionando o cliente ao final de elements_table
-    FILE* elements_table = fopen(dir_elements_table, "a+b");  
-    if (elements_table == NULL) {
-        perror("Erro ao abrir elements_table");
-        exit(1);
-    }
-
-    // Pega a posição atual (final do arquivo) para o offset e escreve o cliente
-    fseek(elements_table, 0, SEEK_END);
-    offset = ftell(elements_table);
-    fwrite(&cliente, sizeof(Client), 1, elements_table);
-    fclose(elements_table);
-
-    // Abrindo index_table para verificar e atualizar o índice
+    // Abrindo index_table para verificar o índice
     FILE* index_table = fopen(dir_index_table, "r+b");
     if (index_table == NULL) {
         perror("Erro ao abrir index_table");
         exit(1);
     }
-
-    // Posiciona o cursor no índice correto e lê o valor atual
+    
+    // Verifica se o lugar está vazio (-1)
     int current_index_value;
     fseek(index_table, index * sizeof(int), SEEK_SET);
     fread(&current_index_value, sizeof(int), 1, index_table);
 
-    // Se o índice estiver vazio (-1), atualiza com o offset do cliente em elements_table
+    // Se o índice está vazio (-1), adicionamos o cliente
     if (current_index_value == -1) {
+
+        // Abrindo e adicionando o cliente ao final de elements_table
+        FILE* elements_table = fopen(dir_elements_table, "a+b");
+        if (elements_table == NULL) {
+            perror("Erro ao abrir elements_table");
+            fclose(index_table);
+            exit(1);
+        }
+
+        // Pega a posição atual (final do arquivo) para o offset e escreve o cliente
+        fseek(elements_table, 0, SEEK_END);
+        offset = ftell(elements_table);
+        cliente.proximo_offset = -1;  // O próximo offset será -1, pois é o último cliente da lista
+        fwrite(&cliente, sizeof(Client), 1, elements_table);
+        fclose(elements_table);
+
+        // Atualiza o índice com o offset do cliente em elements_table
         fseek(index_table, index * sizeof(int), SEEK_SET);  // Reposiciona para escrever
         fwrite(&offset, sizeof(int), 1, index_table);
+        fclose(index_table);
+
+        printf("---------------------------------------\nCliente %s adicionado, hash: %d\n---------------------------------------\n", cliente.nome, index);
+    } else {
+        printf("LUGAR OCUPADO para o hash %d. Preparando tratamento de colisão...\n", index);
+        
+        // Abrindo elements_table para buscar o último cliente da lista encadeada
+        FILE* elements_table = fopen(dir_elements_table, "r+b");
+        if (elements_table == NULL) {
+            perror("Erro ao abrir elements_table");
+            fclose(index_table);
+            exit(1);
+        }
+
+        int search_offset = current_index_value;  // Começa no primeiro cliente da lista encadeada
+        int last_offset;
+        Client current_client;
+        
+        //varre a lista encadeada até achar o -1 que indica seu fim
+        while (search_offset != -1) {
+            fseek(elements_table, search_offset, SEEK_SET);
+            fread(&current_client, sizeof(Client), 1, elements_table);
+            
+            last_offset = search_offset;    //sempre salvando o penultimo offset pois o endereço vai ser perdido quando encontrarmos o -1
+            search_offset = current_client.proximo_offset;
+        }
+
+        //adiciona o cliente ao final da linkedlist
+        fseek(elements_table, 0, SEEK_END);
+        offset = ftell(elements_table);
+        cliente.proximo_offset = -1;
+        fwrite(&cliente, sizeof(Client), 1, elements_table);
+        
+        //aqui atualizamos o proximo elemento do antigo ultimo da linkedlist
+        fseek(elements_table, last_offset, SEEK_SET);
+        current_client.proximo_offset = offset;
+        fwrite(&current_client, sizeof(Client), 1, elements_table);
+        
+        fclose(elements_table);
+        fclose(index_table);
+
+        printf("---------------------------------------\nCliente %s adicionado, hash: %d\nTratamento de colisão realizado\n---------------------------------------\n", cliente.nome, index);
     }
-
-    fclose(index_table);
-
-    printf("---------------------------------------\nCliente %s adicionado, hash: %d\n---------------------------------------\n", cliente.nome, index);
 }
 
 
@@ -133,6 +175,29 @@ void print_table(char* dir_elements_table, char* dir_index_table, int table_size
     fclose(elements_table);
 }
 
+void print_elements_table_sequencial(char* dir_elements_table) {
+    FILE* elements_table = fopen(dir_elements_table, "rb");
+    if (elements_table == NULL) {
+        perror("Erro ao abrir elements_table");
+        exit(1);
+    }
+
+    Client cliente;
+    
+    printf("Conteúdo da elements_table:\n");
+    
+    // Loop que lê os clientes em sequência até o fim do arquivo
+    while (fread(&cliente, sizeof(Client), 1, elements_table)) {
+        
+        printf("Cliente: %s\n", cliente.nome);
+        printf("Código: %d\n", cliente.codigo);
+        printf("Próximo Offset: %d\n", cliente.proximo_offset);
+        printf("---------------------------------------\n");
+    }
+
+    fclose(elements_table);
+}
+
 
 int main(int argc, char const *argv[]) {
     if (argc < 2) {
@@ -169,6 +234,7 @@ int main(int argc, char const *argv[]) {
     add(tres, elements_table, index_table, table_size);
 
     print_index_table(index_table, table_size);
+    print_elements_table_sequencial(elements_table);
     print_table(elements_table, index_table, table_size);
 
     return 0;

@@ -6,7 +6,8 @@
 typedef struct
 {
     int codigo;
-    char nome[CLIENT_NAME_SIZE];
+    char nome[CLIENT_NAME_SIZE]; 
+    int proximo_offset;
 } Client;
 
 static size_t writeClient(Client *client, FILE *file)
