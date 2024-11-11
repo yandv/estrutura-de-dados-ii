@@ -4,7 +4,7 @@
 #include "../include/client.h"
 
 void create_hashtable(int table_size) {
-    FILE *table = fopen("tables/index_table", "wb");
+    FILE *table = fopen("tables/tabHash", "wb");
     if (table == NULL) {
         perror("Erro ao abrir o arquivo");
         exit(1);
@@ -19,63 +19,63 @@ void create_hashtable(int table_size) {
 }
 
 
-void print_index_table(char* dir_index_table, int table_size) {
-    FILE* index_table = fopen(dir_index_table, "rb");
+void print_tabHash(char* dir_tabHash, int table_size) {
+    FILE* tabHash = fopen(dir_tabHash, "rb");
 
-    if (index_table == NULL) {
-        perror("Erro ao abrir index_table");
+    if (tabHash == NULL) {
+        perror("Erro ao abrir tabHash");
         exit(1);
     }
 
     int empty = -1;
     int pointer;
 
-    printf("Conteúdo de index_table:\n");
+    printf("Conteúdo de tabHash:\n");
     for (int i = 0; i < table_size; i++) {
         int offset = i * sizeof(int);
 
         // Posiciona o ponteiro no offset correto e lê o valor
-        fseek(index_table, offset, SEEK_SET);
-        fread(&pointer, sizeof(int), 1, index_table);
+        fseek(tabHash, offset, SEEK_SET);
+        fread(&pointer, sizeof(int), 1, tabHash);
 
         if (pointer == empty) {
             printf("Posição %d: Vazio (-1)\n", i);
         } else {
-            printf("Posição %d: Offset %d em elements_table\n", i, pointer);
+            printf("Posição %d: Offset %d em tabClientes\n", i, pointer);
         }
     }
     printf("---------------------------------------\n");
-    fclose(index_table);
+    fclose(tabHash);
 }
 
-void print_table(char* dir_elements_table, char* dir_index_table, int table_size) {
-    FILE* elements_table = fopen(dir_elements_table, "rb");
-    FILE* index_table = fopen(dir_index_table, "rb");
+void print_table(char* dir_tabClientes, char* dir_tabHash, int table_size) {
+    FILE* tabClientes = fopen(dir_tabClientes, "rb");
+    FILE* tabHash = fopen(dir_tabHash, "rb");
 
-    if (elements_table == NULL || index_table == NULL) {
+    if (tabClientes == NULL || tabHash == NULL) {
         perror("Erro ao abrir o arquivo de tabela");
         exit(1);
     }
 
     int i = 0;
-    int empty = -1;  // Usando -1 para indicar uma entrada vazia no index_table
+    int empty = -1;  // Usando -1 para indicar uma entrada vazia no tabHash
 
     while (i < table_size) {
         int pointer;
         int offset = i * sizeof(int);
         
-        // Lê o valor no index_table
-        fseek(index_table, offset, SEEK_SET);
-        fread(&pointer, sizeof(int), 1, index_table);
+        // Lê o valor no tabHash
+        fseek(tabHash, offset, SEEK_SET);
+        fread(&pointer, sizeof(int), 1, tabHash);
         printf("Cabeças das linkedlists:\n");
         if (pointer == empty) {  // Se o valor for -1, o índice está vazio
             printf("Endereço %d contém:\n", i);
             printf("    Cliente: ********VAZIO*******\n    Código:  ********VAZIO*******\n");
         } else {
             Client cliente;
-            // Posiciona o ponteiro em elements_table com o endereço obtido em pointer
-            fseek(elements_table, pointer, SEEK_SET);
-            fread(&cliente, sizeof(Client), 1, elements_table);
+            // Posiciona o ponteiro em tabClientes com o endereço obtido em pointer
+            fseek(tabClientes, pointer, SEEK_SET);
+            fread(&cliente, sizeof(Client), 1, tabClientes);
 
             printf("Endereço %d contém:\n", i);
             printf("    Cliente: %s\n    Código: %d\n", cliente.nome, cliente.codigo);
@@ -83,23 +83,23 @@ void print_table(char* dir_elements_table, char* dir_index_table, int table_size
         i++;
     }
 
-    fclose(index_table);
-    fclose(elements_table);
+    fclose(tabHash);
+    fclose(tabClientes);
 }
 
-void print_elements_table_sequencial(char* dir_elements_table) {
-    FILE* elements_table = fopen(dir_elements_table, "rb");
-    if (elements_table == NULL) {
-        perror("Erro ao abrir elements_table");
+void print_tabClientes_sequencial(char* dir_tabClientes) {
+    FILE* tabClientes = fopen(dir_tabClientes, "rb");
+    if (tabClientes == NULL) {
+        perror("Erro ao abrir tabClientes");
         exit(1);
     }
 
     Client cliente;
     
-    printf("Conteúdo da elements_table:\n");
+    printf("Conteúdo da tabClientes:\n");
     
     // Loop que lê os clientes em sequência até o fim do arquivo
-    while (fread(&cliente, sizeof(Client), 1, elements_table)) {
+    while (fread(&cliente, sizeof(Client), 1, tabClientes)) {
         
         printf("Cliente: %s\n", cliente.nome);
         printf("Código: %d\n", cliente.codigo);
@@ -107,35 +107,35 @@ void print_elements_table_sequencial(char* dir_elements_table) {
         printf("---------------------------------------\n");
     }
 
-    fclose(elements_table);
+    fclose(tabClientes);
 }
 
 int hash_function(int cod, int table_size) {
     return cod % table_size;
 }
 
-void add(Client cliente, char* dir_elements_table, char* dir_index_table, int table_size) {
+void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int table_size) {
 
     int index = hash_function(cliente.codigo, table_size);
     int offset;
 
     // Abre a tabela de índices para verificar o índice
-    FILE* index_table = fopen(dir_index_table, "r+b");
-    if (index_table == NULL) {
-        perror("Erro ao abrir index_table");
+    FILE* tabHash = fopen(dir_tabHash, "r+b");
+    if (tabHash == NULL) {
+        perror("Erro ao abrir tabHash");
         exit(1);
     }
     
     // Verifica se o lugar está vazio (-1)
     int current_index_value;
-    fseek(index_table, index * sizeof(int), SEEK_SET);
-    fread(&current_index_value, sizeof(int), 1, index_table);
+    fseek(tabHash, index * sizeof(int), SEEK_SET);
+    fread(&current_index_value, sizeof(int), 1, tabHash);
 
-    // Tenta abrir o arquivo elements_table para inserir o cliente
-    FILE* elements_table = fopen(dir_elements_table, "r+b");
-    if (elements_table == NULL) {
-        perror("Erro ao abrir elements_table");
-        fclose(index_table);
+    // Tenta abrir o arquivo tabClientes para inserir o cliente
+    FILE* tabClientes = fopen(dir_tabClientes, "r+b");
+    if (tabClientes == NULL) {
+        perror("Erro ao abrir tabClientes");
+        fclose(tabHash);
         exit(1);
     }
 
@@ -143,13 +143,13 @@ void add(Client cliente, char* dir_elements_table, char* dir_index_table, int ta
     int found_inactive_slot = 0;
     int inactive_offset;
 
-    // Percorre o arquivo elements_table para encontrar um cliente com ocupado == false
+    // Percorre o arquivo tabClientes para encontrar um cliente com ocupado == false
     Client current_client;
-    fseek(elements_table, 0, SEEK_SET); // Volta ao início do arquivo
+    fseek(tabClientes, 0, SEEK_SET); // Volta ao início do arquivo
 
-    while (fread(&current_client, sizeof(Client), 1, elements_table) == 1) {
+    while (fread(&current_client, sizeof(Client), 1, tabClientes) == 1) {
         if (!current_client.ocupado) {  // Se achou um cliente inativo
-            inactive_offset = ftell(elements_table) - sizeof(Client);  // Calcula o offset desse cliente
+            inactive_offset = ftell(tabClientes) - sizeof(Client);  // Calcula o offset desse cliente
             found_inactive_slot = 1;
             break;
         }
@@ -159,24 +159,24 @@ void add(Client cliente, char* dir_elements_table, char* dir_index_table, int ta
     if (found_inactive_slot) {
         cliente.proximo_offset = -1;  // Inicialmente define o proximo_offset como -1
         cliente.ocupado = true;
-        fseek(elements_table, inactive_offset, SEEK_SET);
-        fwrite(&cliente, sizeof(Client), 1, elements_table);
+        fseek(tabClientes, inactive_offset, SEEK_SET);
+        fwrite(&cliente, sizeof(Client), 1, tabClientes);
         
         // Atualiza o índice, se necessário, se o índice estava vazio
         if (current_index_value == -1) {
-            fseek(index_table, index * sizeof(int), SEEK_SET);
-            fwrite(&inactive_offset, sizeof(int), 1, index_table);
+            fseek(tabHash, index * sizeof(int), SEEK_SET);
+            fwrite(&inactive_offset, sizeof(int), 1, tabHash);
         } else {
             // Trata colisão: Atualiza o último elemento da lista encadeada para apontar para o novo cliente
             int last_offset = current_index_value;
             while (last_offset != -1) {
-                fseek(elements_table, last_offset, SEEK_SET);
-                fread(&current_client, sizeof(Client), 1, elements_table);
+                fseek(tabClientes, last_offset, SEEK_SET);
+                fread(&current_client, sizeof(Client), 1, tabClientes);
                 
                 if (current_client.proximo_offset == -1) {
                     current_client.proximo_offset = inactive_offset;
-                    fseek(elements_table, last_offset, SEEK_SET);
-                    fwrite(&current_client, sizeof(Client), 1, elements_table);
+                    fseek(tabClientes, last_offset, SEEK_SET);
+                    fwrite(&current_client, sizeof(Client), 1, tabClientes);
                     break;
                 }
                 
@@ -188,27 +188,27 @@ void add(Client cliente, char* dir_elements_table, char* dir_index_table, int ta
 
     } else {
         // Se não encontramos um cliente inativo, adicionamos o cliente ao final do arquivo
-        fseek(elements_table, 0, SEEK_END);
-        offset = ftell(elements_table);
+        fseek(tabClientes, 0, SEEK_END);
+        offset = ftell(tabClientes);
         cliente.proximo_offset = -1;
         cliente.ocupado = true;
-        fwrite(&cliente, sizeof(Client), 1, elements_table);
+        fwrite(&cliente, sizeof(Client), 1, tabClientes);
 
-        // Atualiza o índice com o offset do cliente em elements_table, se o índice estava vazio
+        // Atualiza o índice com o offset do cliente em tabClientes, se o índice estava vazio
         if (current_index_value == -1) {
-            fseek(index_table, index * sizeof(int), SEEK_SET);
-            fwrite(&offset, sizeof(int), 1, index_table);
+            fseek(tabHash, index * sizeof(int), SEEK_SET);
+            fwrite(&offset, sizeof(int), 1, tabHash);
         } else {
             // Trata colisão: Atualiza o último elemento da lista encadeada para apontar para o novo cliente
             int last_offset = current_index_value;
             while (last_offset != -1) {
-                fseek(elements_table, last_offset, SEEK_SET);
-                fread(&current_client, sizeof(Client), 1, elements_table);
+                fseek(tabClientes, last_offset, SEEK_SET);
+                fread(&current_client, sizeof(Client), 1, tabClientes);
 
                 if (current_client.proximo_offset == -1) {
                     current_client.proximo_offset = offset;
-                    fseek(elements_table, last_offset, SEEK_SET);
-                    fwrite(&current_client, sizeof(Client), 1, elements_table);
+                    fseek(tabClientes, last_offset, SEEK_SET);
+                    fwrite(&current_client, sizeof(Client), 1, tabClientes);
                     break;
                 }
 
@@ -219,158 +219,74 @@ void add(Client cliente, char* dir_elements_table, char* dir_index_table, int ta
         printf("---------------------------------------\nCliente %s adicionado ao final, hash: %d\n---------------------------------------\n", cliente.nome, index);
     }
 
-    fclose(elements_table);
-    fclose(index_table);
+    fclose(tabClientes);
+    fclose(tabHash);
 }
 
 
-/*
 
-void add(Client cliente, char* dir_elements_table, char* dir_index_table, int table_size) {
-
-    int index = hash_function(cliente.codigo, table_size);
-    int offset;
-
-    // Abrindo index_table para verificar o índice
-    FILE* index_table = fopen(dir_index_table, "r+b");
-    if (index_table == NULL) {
-        perror("Erro ao abrir index_table");
-        exit(1);
-    }
-    
-    // Verifica se o lugar está vazio (-1)
-    int current_index_value;
-    fseek(index_table, index * sizeof(int), SEEK_SET);
-    fread(&current_index_value, sizeof(int), 1, index_table);
-
-    // Se o índice está vazio (-1), adicionamos o cliente
-    if (current_index_value == -1) {
-
-        // Abrindo e adicionando o cliente ao final de elements_table
-        FILE* elements_table = fopen(dir_elements_table, "a+b");
-        if (elements_table == NULL) {
-            perror("Erro ao abrir elements_table");
-            fclose(index_table);
-            exit(1);
-        }
-
-        // Pega a posição atual (final do arquivo) para o offset e escreve o cliente
-        fseek(elements_table, 0, SEEK_END);
-        offset = ftell(elements_table);
-        cliente.proximo_offset = -1;  // O próximo offset será -1, pois é o último cliente da lista
-        fwrite(&cliente, sizeof(Client), 1, elements_table);
-        fclose(elements_table);
-
-        // Atualiza o índice com o offset do cliente em elements_table
-        fseek(index_table, index * sizeof(int), SEEK_SET);  // Reposiciona para escrever
-        fwrite(&offset, sizeof(int), 1, index_table);
-        fclose(index_table);
-
-        printf("---------------------------------------\nCliente %s adicionado, hash: %d\n---------------------------------------\n", cliente.nome, index);
-    } else {
-        printf("LUGAR OCUPADO para o hash %d. Preparando tratamento de colisão...\n", index);
-        
-        // Abrindo elements_table para buscar o último cliente da lista encadeada
-        FILE* elements_table = fopen(dir_elements_table, "r+b");
-        if (elements_table == NULL) {
-            perror("Erro ao abrir elements_table");
-            fclose(index_table);
-            exit(1);
-        }
-
-        int search_offset = current_index_value;  // Começa no primeiro cliente da lista encadeada
-        int last_offset;
-        Client current_client;
-        
-        //varre a lista encadeada até achar o -1 que indica seu fim
-        while (search_offset != -1) {
-            fseek(elements_table, search_offset, SEEK_SET);
-            fread(&current_client, sizeof(Client), 1, elements_table);
-            last_offset = search_offset;    //sempre salvando o penultimo offset pois o endereço vai ser perdido quando encontrarmos o -1
-            search_offset = current_client.proximo_offset;
-        }
-
-        //adiciona o cliente ao final da linkedlist
-        fseek(elements_table, 0, SEEK_END);
-        offset = ftell(elements_table);
-        cliente.proximo_offset = -1;
-        fwrite(&cliente, sizeof(Client), 1, elements_table);
-        
-        //aqui atualizamos o proximo elemento do antigo ultimo da linkedlist
-        fseek(elements_table, last_offset, SEEK_SET);
-        current_client.proximo_offset = offset;
-        fwrite(&current_client, sizeof(Client), 1, elements_table);
-        
-        fclose(elements_table);
-        fclose(index_table);
-
-        printf("---------------------------------------\nCliente %s adicionado, hash: %d\nTratamento de colisão realizado\n---------------------------------------\n", cliente.nome, index);
-    }
-}
-
-*/void delete(int codigo_cliente, char* dir_elements_table, char* dir_index_table, int table_size) {
+void delete(int codigo_cliente, char* dir_tabClientes, char* dir_tabHash, int table_size) {
 
     int index = hash_function(codigo_cliente, table_size);
 
-    FILE* index_table = fopen(dir_index_table, "r+b");
-    if (index_table == NULL) {
-        perror("Erro ao abrir index_table");
+    FILE* tabHash = fopen(dir_tabHash, "r+b");
+    if (tabHash == NULL) {
+        perror("Erro ao abrir tabHash");
         exit(1);
     }
     
     int current_index_value;
-    fseek(index_table, index * sizeof(int), SEEK_SET);
-    fread(&current_index_value, sizeof(int), 1, index_table);
+    fseek(tabHash, index * sizeof(int), SEEK_SET);
+    fread(&current_index_value, sizeof(int), 1, tabHash);
 
     // Se o índice está vazio (-1), o cliente não existe
     if (current_index_value == -1) {
         printf("Cliente com código %d não encontrado.\n", codigo_cliente);
-        fclose(index_table);
+        fclose(tabHash);
         return;
     }
 
     // Abre a tabela de elementos para percorrer a lista encadeada
-    FILE* elements_table = fopen(dir_elements_table, "r+b");
-    if (elements_table == NULL) {
-        perror("Erro ao abrir elements_table");
-        fclose(index_table);
+    FILE* tabClientes = fopen(dir_tabClientes, "r+b");
+    if (tabClientes == NULL) {
+        perror("Erro ao abrir tabClientes");
+        fclose(tabHash);
         exit(1);
     }
 
-    int search_offset = current_index_value;  // Primeiro da lista
-    int previous_offset = -1;  // Offset do cliente anterior, -1 para a cabeça da lista
+    int search_offset = current_index_value;  
+    int previous_offset = -1;  // offset do cliente anterior, -1 para a cabeça da lista
     Client current_client;
     int found = 0;
 
-    // Percorre a lista encadeada até encontrar o cliente ou chegar ao final
     while (search_offset != -1) {
-        fseek(elements_table, search_offset, SEEK_SET);
-        fread(&current_client, sizeof(Client), 1, elements_table);
+        fseek(tabClientes, search_offset, SEEK_SET);
+        fread(&current_client, sizeof(Client), 1, tabClientes);
 
         if (current_client.codigo == codigo_cliente) {
             // Marca o cliente como inativo
             current_client.ocupado = false;
 
-            // Atualiza a lista encadeada
+            //atualiza a lista encadeada
             if (previous_offset == -1) {
                 // Caso 1: Cliente é a cabeça da lista
-                fseek(index_table, index * sizeof(int), SEEK_SET);
-                fwrite(&current_client.proximo_offset, sizeof(int), 1, index_table);
+                fseek(tabHash, index * sizeof(int), SEEK_SET);
+                fwrite(&current_client.proximo_offset, sizeof(int), 1, tabHash);
             } else {
                 // Caso 2: Cliente não é a cabeça da lista
                 Client previous_client;
-                fseek(elements_table, previous_offset, SEEK_SET);
-                fread(&previous_client, sizeof(Client), 1, elements_table);
+                fseek(tabClientes, previous_offset, SEEK_SET);
+                fread(&previous_client, sizeof(Client), 1, tabClientes);
                 previous_client.proximo_offset = current_client.proximo_offset;
                 
                 // Escreve o cliente anterior com o próximo atualizado
-                fseek(elements_table, previous_offset, SEEK_SET);
-                fwrite(&previous_client, sizeof(Client), 1, elements_table);
+                fseek(tabClientes, previous_offset, SEEK_SET);
+                fwrite(&previous_client, sizeof(Client), 1, tabClientes);
             }
 
             // Marca o cliente atual como inativo
-            fseek(elements_table, search_offset, SEEK_SET);
-            fwrite(&current_client, sizeof(Client), 1, elements_table);
+            fseek(tabClientes, search_offset, SEEK_SET);
+            fwrite(&current_client, sizeof(Client), 1, tabClientes);
 
             printf("Cliente com código %d marcado como excluído.\n", codigo_cliente);
             found = 1;
@@ -385,11 +301,11 @@ void add(Client cliente, char* dir_elements_table, char* dir_index_table, int ta
         printf("Cliente com código %d não encontrado.\n", codigo_cliente);
     }
 
-    fclose(elements_table);
-    fclose(index_table);
+    fclose(tabClientes);
+    fclose(tabHash);
 }
 
-
+//MAIN PARA TESTES
 
 int main(int argc, char const *argv[]) {
     if (argc < 2) {
@@ -400,8 +316,8 @@ int main(int argc, char const *argv[]) {
     int table_size = atoi(argv[1]);
     create_hashtable(table_size);
 
-    char *elements_table = "tables/elements_table";
-    char *index_table = "tables/index_table";
+    char *tabClientes = "tables/tabClientes";
+    char *tabHash = "tables/tabHash";
 
     FILE *clientes = fopen("resources/clients.txt", "rb");
     if (clientes == NULL) {
@@ -421,20 +337,20 @@ int main(int argc, char const *argv[]) {
     fread(&dois, sizeof(Client), 1, clientes);
     fclose(clientes);
 
-    add(dois, elements_table, index_table, table_size);
-    add(tres, elements_table, index_table, table_size);
-    add(um, elements_table, index_table, table_size);
+    add(dois, tabClientes, tabHash, table_size);
+    add(tres, tabClientes, tabHash, table_size);
+    add(um, tabClientes, tabHash, table_size);
 
-    print_index_table(index_table, table_size);
-    print_elements_table_sequencial(elements_table);
-    print_table(elements_table, index_table, table_size);
+    print_tabHash(tabHash, table_size);
+    print_tabClientes_sequencial(tabClientes);
+    print_table(tabClientes, tabHash, table_size);
 
     //deletando
 
-    delete(tres.codigo, elements_table, index_table, table_size);
-    add(um, elements_table, index_table, table_size);
+    delete(tres.codigo, tabClientes, tabHash, table_size);
+    add(um, tabClientes, tabHash, table_size);
     printf("\n");
-    print_elements_table_sequencial(elements_table);
+    print_tabClientes_sequencial(tabClientes);
 
 
 
