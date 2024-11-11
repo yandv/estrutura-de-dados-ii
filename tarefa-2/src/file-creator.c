@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include "../include/bool.h"
 
 #include "../include/client.h"
 
@@ -77,6 +78,7 @@ int main(int argc, char const *argv[])
     {
         client->codigo = rand() % 10000;
         client->proximo_offset = -1;
+        client->ocupado = true;
         strcpy(client->nome, names[rand() % (sizeof(names) / sizeof(names[0]))]);
         writeClient(client, file);
     }
