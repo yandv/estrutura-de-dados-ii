@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include "../include/bool.h"
 #include "../include/client.h"
+#include "aux.h"
+#include <math.h>
+
+int L = 0;
+int P = 0;
 
 void create_hashtable(int table_size) {
     FILE *table = fopen("tables/tabHash", "wb");
@@ -18,105 +23,13 @@ void create_hashtable(int table_size) {
     fclose(table);
 }
 
-
-void print_tabHash(char* dir_tabHash, int table_size) {
-    FILE* tabHash = fopen(dir_tabHash, "rb");
-
-    if (tabHash == NULL) {
-        perror("Erro ao abrir tabHash");
-        exit(1);
-    }
-
-    int empty = -1;
-    int pointer;
-
-    printf("Conteúdo de tabHash:\n");
-    for (int i = 0; i < table_size; i++) {
-        int offset = i * sizeof(int);
-
-        // Posiciona o ponteiro no offset correto e lê o valor
-        fseek(tabHash, offset, SEEK_SET);
-        fread(&pointer, sizeof(int), 1, tabHash);
-
-        if (pointer == empty) {
-            printf("Posição %d: Vazio (-1)\n", i);
-        } else {
-            printf("Posição %d: Offset %d em tabClientes\n", i, pointer);
-        }
-    }
-    printf("---------------------------------------\n");
-    fclose(tabHash);
+int hash_function(int cod, int table_size, int L) {
+    return cod % (int)((table_size * pow(2, L)));
 }
 
-void print_table(char* dir_tabClientes, char* dir_tabHash, int table_size) {
-    FILE* tabClientes = fopen(dir_tabClientes, "rb");
-    FILE* tabHash = fopen(dir_tabHash, "rb");
+void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int* table_size, int* P, float load_factor_limit) {
 
-    if (tabClientes == NULL || tabHash == NULL) {
-        perror("Erro ao abrir o arquivo de tabela");
-        exit(1);
-    }
-
-    int i = 0;
-    int empty = -1;  // Usando -1 para indicar uma entrada vazia no tabHash
-
-    while (i < table_size) {
-        int pointer;
-        int offset = i * sizeof(int);
-        
-        // Lê o valor no tabHash
-        fseek(tabHash, offset, SEEK_SET);
-        fread(&pointer, sizeof(int), 1, tabHash);
-        printf("Cabeças das linkedlists:\n");
-        if (pointer == empty) {  // Se o valor for -1, o índice está vazio
-            printf("Endereço %d contém:\n", i);
-            printf("    Cliente: ********VAZIO*******\n    Código:  ********VAZIO*******\n");
-        } else {
-            Client cliente;
-            // Posiciona o ponteiro em tabClientes com o endereço obtido em pointer
-            fseek(tabClientes, pointer, SEEK_SET);
-            fread(&cliente, sizeof(Client), 1, tabClientes);
-
-            printf("Endereço %d contém:\n", i);
-            printf("    Cliente: %s\n    Código: %d\n", cliente.nome, cliente.codigo);
-        }
-        i++;
-    }
-
-    fclose(tabHash);
-    fclose(tabClientes);
-}
-
-void print_tabClientes_sequencial(char* dir_tabClientes) {
-    FILE* tabClientes = fopen(dir_tabClientes, "rb");
-    if (tabClientes == NULL) {
-        perror("Erro ao abrir tabClientes");
-        exit(1);
-    }
-
-    Client cliente;
-    
-    printf("Conteúdo da tabClientes:\n");
-    
-    // Loop que lê os clientes em sequência até o fim do arquivo
-    while (fread(&cliente, sizeof(Client), 1, tabClientes)) {
-        
-        printf("Cliente: %s\n", cliente.nome);
-        printf("Código: %d\n", cliente.codigo);
-        printf("Próximo Offset: %d\n", cliente.proximo_offset);
-        printf("---------------------------------------\n");
-    }
-
-    fclose(tabClientes);
-}
-
-int hash_function(int cod, int table_size) {
-    return cod % table_size;
-}
-
-void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int table_size) {
-
-    int index = hash_function(cliente.codigo, table_size);
+    int index = hash_function(cliente.codigo, table_size, L);
     int offset;
 
     // Abre a tabela de índices para verificar o índice
@@ -184,7 +97,7 @@ void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int table_siz
             }
         }
 
-        printf("---------------------------------------\nCliente %s adicionado (ocupando espaço inativo), hash: %d\n---------------------------------------\n", cliente.nome, index);
+        printf("---------------------------------------\nCliente %s adicionado (ocupando espaço inativo de um cliente removido), hash: %d\n---------------------------------------\n", cliente.nome, index);
 
     } else {
         // Se não encontramos um cliente inativo, adicionamos o cliente ao final do arquivo
@@ -218,16 +131,22 @@ void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int table_siz
 
         printf("---------------------------------------\nCliente %s adicionado ao final, hash: %d\n---------------------------------------\n", cliente.nome, index);
     }
+    
+
+    /*AO FIM DE CADA ADICÇÃO, VERIFICAR SE PRECISA EXPANDIR
+    VERIFICAR SE PRECISA EXPANDIR*/
+
+    if(checks_fator(tabClientes, table_size, load_factor_limit)==1){ 
+        expands_table(tabHash, table_size); //falta implementar expands table pq nao lembro o algoritmo 
+    }
 
     fclose(tabClientes);
     fclose(tabHash);
 }
 
-
-
 void delete(int codigo_cliente, char* dir_tabClientes, char* dir_tabHash, int table_size) {
 
-    int index = hash_function(codigo_cliente, table_size);
+    int index = hash_function(codigo_cliente, table_size, L);
 
     FILE* tabHash = fopen(dir_tabHash, "r+b");
     if (tabHash == NULL) {
@@ -308,12 +227,18 @@ void delete(int codigo_cliente, char* dir_tabClientes, char* dir_tabHash, int ta
 //MAIN PARA TESTES
 
 int main(int argc, char const *argv[]) {
+
     if (argc < 2) {
         fprintf(stderr, "Uso: %s <tamanho da tabela>\n", argv[0]);
         return 1;
     }
 
+    //configuração inicial
+    int L = 0;
+    int P = 0;
     int table_size = atoi(argv[1]);
+    float limite_fator_de_carga = 1;
+
     create_hashtable(table_size);
 
     char *tabClientes = "tables/tabClientes";
