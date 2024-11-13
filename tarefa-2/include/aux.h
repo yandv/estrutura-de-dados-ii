@@ -42,9 +42,9 @@ void print_tabHash(char* dir_tabHash, int table_size) {
         fread(&pointer, sizeof(int), 1, tabHash);
 
         if (pointer == empty) {
-            printf("Posição %d: Vazio (-1)\n", i);
+            printf("Index %d: Vazio (-1)\n", i);
         } else {
-            printf("Posição %d: Offset %d em tabClientes\n", i, pointer);
+            printf("Index %d: Offset %d em tabClientes\n", i, pointer);
         }
     }
     printf("---------------------------------------\n");
@@ -63,7 +63,7 @@ void print_table(char* dir_tabClientes, char* dir_tabHash, int table_size) {
     int i = 0;
     int empty = -1;  // Usando -1 para indicar uma entrada vazia no tabHash
 
-    printf("Cabeças das linked lists em tabHash:\n");
+    printf("-----------------------------------------\nCabeças das linked lists em tabHash:\n\n");
     while (i < table_size) {
         int pointer;
         int offset = i * sizeof(int);
@@ -72,7 +72,7 @@ void print_table(char* dir_tabClientes, char* dir_tabHash, int table_size) {
         fseek(tabHash, offset, SEEK_SET);
         fread(&pointer, sizeof(int), 1, tabHash);
         if (pointer == empty) {  // Se o valor for -1, o índice está vazio
-            printf("Endereço %d contém:\n", i);
+            printf("Index %d contém:\n", i);
             printf("    Cliente: ********VAZIO*******\n    Código:  ********VAZIO*******\n");
         } else {
             Client cliente;
@@ -80,7 +80,7 @@ void print_table(char* dir_tabClientes, char* dir_tabHash, int table_size) {
             fseek(tabClientes, pointer, SEEK_SET);
             fread(&cliente, sizeof(Client), 1, tabClientes);
 
-            printf("Endereço %d contém:\n", i);
+            printf("Index %d contém:\n", i);
             printf("    Cliente: %s\n    Código: %d\n", cliente.nome, cliente.codigo);
         }
         i++;

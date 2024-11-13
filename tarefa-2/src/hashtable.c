@@ -58,7 +58,7 @@ void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, in
     fseek(tabHash, new_index_offset * sizeof(int), SEEK_SET);
     fwrite(&empty, sizeof(int), 1, tabHash); // definindo como vazio a nova expansão
 
-    int new_table_size = (*table_size) + P;
+    int new_table_size = (*table_size) + *P;
 
     FILE* tabClientes = fopen(dir_tabClientes, "r+b");
     if (tabClientes == NULL) {
@@ -226,7 +226,7 @@ void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int* table_si
     }
 
     if (checks_fator(tabClientes, *table_size, load_factor_limit) == 1) {
-        printf("\n\n\n\nEXPANDINDO\n");
+        printf("\n---------------------\nEXPANDINDO\n---------------------\n");
         expands_table(dir_tabClientes, dir_tabHash, table_size, P, L);
     }
 
@@ -375,7 +375,6 @@ int main(int argc, char const *argv[]) {
     int L = 0;
     int P = 0;
 
-    // Configuração inicial
     int table_size = atoi(argv[1]);
     float limite_fator_de_carga = 1;
 
@@ -407,7 +406,7 @@ int main(int argc, char const *argv[]) {
 
     print_tabHash(tabHash, table_size);
     printf("\n");
-
+    //aqui ele vai expandir
     add(um, tabClientes, tabHash, &table_size, &P, limite_fator_de_carga, &L);
     printf("\n");
 
@@ -419,8 +418,6 @@ int main(int argc, char const *argv[]) {
 
     print_table(tabClientes, tabHash, table_size + P);
     printf("\n");
-
-    Client* cliente = find_client_by_code(um.codigo, tabClientes, tabHash, table_size, P, L);
 
     return 0;
 }
