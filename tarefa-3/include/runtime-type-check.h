@@ -7,17 +7,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define INT_SIZE sizeof(int)
-#define CHAR_SIZE sizeof(char)
-#define KEY_NAME_SIZE 50
-
-typedef struct
-{
-    char keyName[KEY_NAME_SIZE];
-    int offset;
-    unsigned long sizeofKey;
-} KeyInformation;
-
 /**
  * Utility!!
  */
@@ -77,19 +66,19 @@ int compareElementWithValue(KeyInformation *keyInformation, uint8_t *element, ui
     }
 }
 
-int compare(KeyInformation *keyInformation, uint8_t *element1, uint8_t *element2)
+int compare(KeyInformation *keyInformation, size_t offset, uint8_t *element1, uint8_t *element2)
 {
     if (strcmp(keyInformation->keyName, "nome") == 0)
     {
-        return strcmp((char *)(element1 + INT_SIZE + INT_SIZE), (char *)(element2 + INT_SIZE + INT_SIZE));
+        return strcmp((char *)(element1 + offset), (char *)(element2 + offset));
     }
     else if (strcmp(keyInformation->keyName, "idade") == 0)
     {
-        return *(int *)(element1 + INT_SIZE + INT_SIZE) - *(int *)(element2 + INT_SIZE + INT_SIZE);
+        return *(int *)(element1 + offset) - *(int *)(element2 + offset);
     }
     else if (strcmp(keyInformation->keyName, "codigo") == 0)
     {
-        return *(int *)(element1 + INT_SIZE + INT_SIZE) - *(int *)(element2 + INT_SIZE + INT_SIZE);
+        return *(int *)(element1 + offset) - *(int *)(element2 + offset);
     }
     else
     {
@@ -97,7 +86,7 @@ int compare(KeyInformation *keyInformation, uint8_t *element1, uint8_t *element2
     }
 }
 
-KeyInformation *createKeyInformation(char *keyName)
+KeyInformation *createKeyInformation(const char *keyName)
 {
     KeyInformation *keyInformation = (KeyInformation *)malloc(sizeof(KeyInformation));
     strcpy(keyInformation->keyName, keyName);

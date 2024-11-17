@@ -21,17 +21,13 @@ char *convertKeyToString(uint8_t *element, int offset, KeyInformation *keyInform
         str[keyInformation->sizeofKey] = '\0';
         return str;
     }
-    else if (strcmp(keyInformation->keyName, "idade") == 0)
+    else if (strcmp(keyInformation->keyName, "idade") == 0 || strcmp(keyInformation->keyName, "codigo") == 0)
     {
         char *str = (char *)malloc(keyInformation->sizeofKey + 1);
         sprintf(str, "%d", *(int *)(element + offset));
         return str;
-    }
-    else if (strcmp(keyInformation->keyName, "codigo") == 0)
-    {
-        char *str = (char *)malloc(keyInformation->sizeofKey + 1);
-        sprintf(str, "%d", *(int *)(element + offset));
-        return str;
+    } else {
+        printf("eita\n");
     }
 }
 

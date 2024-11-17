@@ -19,7 +19,7 @@ int main(int argc, char const *argv[])
 {
     const int partitionSize = argc > 1 ? atoi(argv[1]) : 10;
     const char *fileName = argc > 2 ? argv[2] : "resources/clients.txt";
-    const char *outputDirectory = argc > 1 ? argv[1] : "bin/output";
+    const char *outputDirectory = argc > 3 ? argv[3] : "bin/output";
 
     if (partitionSize <= 0)
     {

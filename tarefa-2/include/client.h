@@ -3,6 +3,10 @@
 
 #define CLIENT_NAME_SIZE 100
 
+#include "../include/bool.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 typedef struct
 {
     int codigo;
