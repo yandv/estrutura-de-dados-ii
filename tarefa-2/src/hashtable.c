@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include "../include/bool.h"
 #include "../include/client.h"
-#include "../include/aux.h"
+#include "../include/_aux.h"
 #include <math.h>
 
 
-void create_hashtable(int table_size) {
+void create_tabHash(int table_size) {
     FILE *table = fopen("tables/tabHash", "wb");
     if (table == NULL) {
         perror("Erro ao abrir o arquivo");
@@ -16,6 +16,16 @@ void create_hashtable(int table_size) {
     int empty = -1;  //usando o  -1 para indicar uma entrada vazia
     for (int i = 0; i < table_size; i++) {
         fwrite(&empty, sizeof(int), 1, table);
+    }
+
+    fclose(table);
+}
+
+void create_tabClientes() {
+    FILE *table = fopen("tables/tabClientes", "wb");
+    if (table == NULL) {
+        perror("Erro ao abrir o arquivo");
+        exit(1);
     }
 
     fclose(table);
@@ -36,14 +46,17 @@ int mapear(int codigo, int table_size, int P, int L) {
     // printf("P É %d\n", P);
 
     if (endereco < P) {
-        endereco = hash_function(codigo, table_size, L); 
+        endereco = hash_function(codigo, table_size, L + 1); 
         // printf("O ENDEREÇO DO CODIGO %d é %d USANDO HASH 1\n", codigo, endereco);
     } else {
-        endereco = hash_function(codigo, table_size, L + 1);
+        
+        endereco = hash_function(codigo, table_size, L);
         // printf("O ENDEREÇO DO CODIGO %d é %d, USANDO A HASH 2\n", codigo, endereco);
     }
     return endereco;
 }
+
+
 
 void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, int* P, int* L) {
     int empty = -1;
@@ -74,12 +87,15 @@ void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, in
     int prev_offset_in_P = -1;
     int new_index_head = -1;
 
+    fseek(tabHash, (*P) * sizeof(int), SEEK_SET);
+    fwrite(&empty, sizeof(int), 1, tabHash); // redefinindo como vazio o índice atual no hash
+
     while (current_offset != -1) {
         Client cliente;
         fseek(tabClientes, current_offset, SEEK_SET);
         fread(&cliente, sizeof(Client), 1, tabClientes);
 
-        int new_index = mapear(cliente.codigo, new_table_size, *P, *L); // talvez tenha que mudar de new_table_size para (*table_size)
+        int new_index = mapear(cliente.codigo, new_table_size, *P, *L);
 
         if (new_index == *P) {
             if (prev_offset_in_P == -1) {
@@ -137,6 +153,8 @@ void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, in
     fclose(tabClientes);
     fclose(tabHash);
 }
+
+
 
 void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int* table_size, int* P, float load_factor_limit, int* L) {
     int index = hash_function(cliente.codigo, *table_size, *L);
@@ -226,7 +244,9 @@ void add(Client cliente, char* dir_tabClientes, char* dir_tabHash, int* table_si
     }
 
     if (checks_fator(tabClientes, *table_size, load_factor_limit) == 1) {
-        printf("\n---------------------\nEXPANDINDO\n---------------------\n");
+        printf("=========================================");
+        printf("\nEXPANDINDO\n");
+        printf("=========================================\n");
         expands_table(dir_tabClientes, dir_tabHash, table_size, P, L);
     }
 
@@ -377,8 +397,9 @@ int main(int argc, char const *argv[]) {
 
     int table_size = atoi(argv[1]);
     float limite_fator_de_carga = 1;
-
-    create_hashtable(table_size);
+    
+    create_tabHash(table_size);
+    create_tabClientes();
 
     char *tabClientes = "tables/tabClientes";
     char *tabHash = "tables/tabHash";
@@ -389,7 +410,7 @@ int main(int argc, char const *argv[]) {
         return 1;
     }
 
-    Client um, dois, tres;
+    Client um, dois, tres, quatro, cinco;
 
     fseek(clientes, 0 * sizeof(Client), SEEK_SET);
     fread(&tres, sizeof(Client), 1, clientes);
@@ -399,25 +420,42 @@ int main(int argc, char const *argv[]) {
 
     fseek(clientes, 2 * sizeof(Client), SEEK_SET);
     fread(&dois, sizeof(Client), 1, clientes);
+
+    fseek(clientes, 3 * sizeof(Client), SEEK_SET);
+    fread(&quatro, sizeof(Client), 1, clientes);
+
+    fseek(clientes, 4 * sizeof(Client), SEEK_SET);
+    fread(&cinco, sizeof(Client), 1, clientes);
+
     fclose(clientes);
+
 
     add(dois, tabClientes, tabHash, &table_size, &P, limite_fator_de_carga, &L);
     add(tres, tabClientes, tabHash, &table_size, &P, limite_fator_de_carga, &L);
 
+
     print_tabHash(tabHash, table_size);
     printf("\n");
+
+
     //aqui ele vai expandir
     add(um, tabClientes, tabHash, &table_size, &P, limite_fator_de_carga, &L);
     printf("\n");
 
-    print_tabHash(tabHash, table_size + P);
-    printf("\n");
+    add(quatro, tabClientes, tabHash, &table_size, &P, limite_fator_de_carga, &L);
 
-    print_tabClientes_sequencial(tabClientes);
+    add(cinco, tabClientes, tabHash, &table_size, &P, limite_fator_de_carga, &L);
+
+    print_tabHash(tabHash, table_size + P);
     printf("\n");
 
     print_table(tabClientes, tabHash, table_size + P);
     printf("\n");
+
+    
+    print_tabClientes_sequencial(tabClientes);
+    printf("\n");
+
 
     return 0;
 }

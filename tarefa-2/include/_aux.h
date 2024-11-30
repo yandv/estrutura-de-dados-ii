@@ -33,7 +33,7 @@ void print_tabHash(char* dir_tabHash, int table_size) {
     int empty = -1;
     int pointer;
 
-    printf("Conteúdo de tabHash:\n");
+    printf("Conteudo de tabHash:\n");
     for (int i = 0; i < table_size; i++) {
         int offset = i * sizeof(int);
 
@@ -47,7 +47,7 @@ void print_tabHash(char* dir_tabHash, int table_size) {
             printf("Index %d: Offset %d em tabClientes\n", i, pointer);
         }
     }
-    printf("---------------------------------------\n");
+    printf("=========================================\n");
     fclose(tabHash);
 }
 
@@ -60,35 +60,45 @@ void print_table(char* dir_tabClientes, char* dir_tabHash, int table_size) {
         exit(1);
     }
 
-    int i = 0;
-    int empty = -1;  // Usando -1 para indicar uma entrada vazia no tabHash
+    int empty = -1;
 
-    printf("-----------------------------------------\nCabeças das linked lists em tabHash:\n\n");
-    while (i < table_size) {
+    printf("=========================================\n");
+
+    printf("Listas encadeadas da tabela:\n\n");
+
+    for (int i = 0; i < table_size; i++) {
         int pointer;
         int offset = i * sizeof(int);
-        
-        // Lê o valor no tabHash
+
         fseek(tabHash, offset, SEEK_SET);
         fread(&pointer, sizeof(int), 1, tabHash);
-        if (pointer == empty) {  // Se o valor for -1, o índice está vazio
-            printf("Index %d contém:\n", i);
-            printf("    Cliente: ********VAZIO*******\n    Código:  ********VAZIO*******\n");
-        } else {
-            Client cliente;
-            // Posiciona o ponteiro em tabClientes com o endereço obtido em pointer
-            fseek(tabClientes, pointer, SEEK_SET);
-            fread(&cliente, sizeof(Client), 1, tabClientes);
 
-            printf("Index %d contém:\n", i);
-            printf("    Cliente: %s\n    Código: %d\n", cliente.nome, cliente.codigo);
+        printf("Index %d: ", i);
+        if (pointer == empty) { 
+            printf(" ---> VAZIO   ");
+        } else {
+            while (pointer != empty) {
+                Client cliente;
+
+                fseek(tabClientes, pointer, SEEK_SET);
+                fread(&cliente, sizeof(Client), 1, tabClientes);
+
+                if (cliente.ocupado) {
+                    printf(" ---> [Cliente: %s, Codigo: %d] ", cliente.nome, cliente.codigo);
+                } else {
+                    printf("[Cliente: ********REMOVIDO********] ");
+                }
+
+                pointer = cliente.proximo_offset;
+            }
         }
-        i++;
+        printf("\n");
     }
 
     fclose(tabHash);
     fclose(tabClientes);
 }
+
 
 void print_tabClientes_sequencial(char* dir_tabClientes) {
     FILE* tabClientes = fopen(dir_tabClientes, "rb");
@@ -99,15 +109,18 @@ void print_tabClientes_sequencial(char* dir_tabClientes) {
 
     Client cliente;
     
-    printf("Conteúdo da tabClientes:\n");
+    printf("=========================================\n");
+    printf("Conteudo completo de tabClientes (sequencial):\n");
+    printf("-----------------------------------------\n");
     
     // Loop que lê os clientes em sequência até o fim do arquivo
     while (fread(&cliente, sizeof(Client), 1, tabClientes)) {
         
         printf("Cliente: %s\n", cliente.nome);
-        printf("Código: %d\n", cliente.codigo);
-        printf("Próximo Offset: %d\n", cliente.proximo_offset);
-        printf("---------------------------------------\n");
+        printf("Codigo: %d\n", cliente.codigo);
+        printf("Proximo Offset: %d\n", cliente.proximo_offset);
+
+        printf("-----------------------------------------\n");
     }
 
     fclose(tabClientes);
