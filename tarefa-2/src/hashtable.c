@@ -61,23 +61,21 @@ int mapear(int codigo, int table_size, int P, int L) {
 void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, int* P, int* L) {
     int empty = -1;
 
-    // Abrir tabHash e tabClientes para leitura e escrita
     FILE* tabHash = fopen(dir_tabHash, "r+b");
     if (tabHash == NULL) {
         perror("Erro ao abrir tabHash");
         exit(1);
     }
 
-    int new_table_size = *table_size * 2;  // O novo tamanho da tabela será o dobro
-    int new_offset = *table_size;  // Novo índice de expansão
+    int new_table_size = *table_size * 2;  
+    int new_offset = *table_size;  
 
-    // Expandir a tabela de hash, colocando um marcador de espaço vazio para a nova parte da tabela
     fseek(tabHash, new_offset * sizeof(int), SEEK_SET);
     for (int i = *table_size; i < new_table_size; i++) {
         fwrite(&empty, sizeof(int), 1, tabHash);  // Preenche os novos slots com -1
     }
 
-    // Recalcular os índices dos clientes com base na nova tabela
+
     FILE* tabClientes = fopen(dir_tabClientes, "r+b");
     if (tabClientes == NULL) {
         perror("Erro ao abrir tabClientes");
@@ -85,32 +83,32 @@ void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, in
         exit(1);
     }
 
-    // Loop para redistribuir os clientes da tabela antiga para a nova tabela de hash
+
     for (int i = 0; i < *table_size; i++) {
         int current_offset;
         fseek(tabHash, i * sizeof(int), SEEK_SET);
         fread(&current_offset, sizeof(int), 1, tabHash);
 
-        // Verifica se há um cliente neste índice
+
         while (current_offset != -1) {
             Client cliente;
             fseek(tabClientes, current_offset, SEEK_SET);
             fread(&cliente, sizeof(Client), 1, tabClientes);
 
-            // Calcular o novo índice de hash para o cliente após a expansão
+
             int new_index = mapear(cliente.codigo, new_table_size, *P, *L);
             
-            // Verifica se o novo índice já está ocupado (colisão)
+
             int next_offset;
             fseek(tabHash, new_index * sizeof(int), SEEK_SET);
             fread(&next_offset, sizeof(int), 1, tabHash);
 
             if (next_offset == -1) {
-                // Se o índice está livre, insere o cliente
+               
                 fseek(tabHash, new_index * sizeof(int), SEEK_SET);
-                fwrite(&current_offset, sizeof(int), 1, tabHash); // Aponta para o cliente
+                fwrite(&current_offset, sizeof(int), 1, tabHash);
             } else {
-                // Se já há outro cliente, vamos encadear os clientes (lista encadeada)
+         
                 int last_offset = current_offset;
                 while (next_offset != -1) {
                     last_offset = next_offset;
@@ -119,29 +117,27 @@ void expands_table(char* dir_tabClientes, char* dir_tabHash, int* table_size, in
                     next_offset = cliente.proximo_offset;
                 }
 
-                // Agora o último cliente encadeado terá o próximo índice de hash
-                cliente.proximo_offset = -1; // Fim da lista encadeada
+                
+                cliente.proximo_offset = -1; // fim da lista encadeada
                 fseek(tabClientes, current_offset, SEEK_SET);
-                fwrite(&cliente, sizeof(Client), 1, tabClientes); // Atualiza o cliente original
+                fwrite(&cliente, sizeof(Client), 1, tabClientes); // atualiza o cliente original
 
-                // Adiciona o novo cliente no final da lista encadeada
+              
                 fseek(tabHash, new_index * sizeof(int), SEEK_SET);
-                fwrite(&current_offset, sizeof(int), 1, tabHash); // Atualiza o índice de hash com o novo cliente
+                fwrite(&current_offset, sizeof(int), 1, tabHash); // atualiza o index de hash com o novo cliente
             }
 
-            // Avançar para o próximo cliente na lista encadeada
+         
             current_offset = cliente.proximo_offset;
         }
     }
 
-    // Atualizar os parâmetros globais P e L após a expansão
     *P = (*P + 1) % new_table_size;
     if (*P == 0) {
         *table_size = new_table_size;
         (*L)++;
     }
 
-    // Fechar os arquivos
     fclose(tabClientes);
     fclose(tabHash);
 }
